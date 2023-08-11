@@ -20,20 +20,36 @@ class CNAlps_Weather_Widget extends WP_Widget {
         $city = isset( $instance['city'] ) ? $instance['city'] : 'Crest';
         $country = isset( $instance['country'] ) ? $instance['country'] : 'France';
 
-        $api_url = "https://www.weatherwp.com/api/common/publicWeatherForLocation.php?city=$city&country=$country&language=french";
-        $response = wp_remote_get( $api_url );
+        echo '<div class="cnalps-weather-widget">';
+        echo '<div class="weather-title">Météo à <span id="city">' . esc_html( $city ) . '</span></div>';
+        echo '<p>Température : <span id="temperature"></span> °C</p>';
+        echo '<img id="weather-icon" src="" alt="">';
+        echo '<p id="weather-description"></p>';
+        echo '</div>';
+        ?>
 
-        if ( ! is_wp_error( $response ) ) {
-            $body = wp_remote_retrieve_body( $response );
-            $data = json_decode( $body );
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var temperatureElement = document.getElementById("temperature");
+                var weatherIconElement = document.getElementById("weather-icon");
+                var weatherDescriptionElement = document.getElementById("weather-description");
+                var cityElement = document.getElementById("city");
 
-            echo '<div class="cnalps-weather-widget">';
-            echo '<div class="weather-title">Météo à ' . esc_html( $data->status_message ) . '</div>';
-            echo '<p>Température : ' . esc_html( $data->temp ) . ' °C</p>';
-            echo '<img src="' . esc_url( $data->icon ) . '" alt="' . esc_attr( $data->description ) . '">';
-            echo '<p>' . esc_html( $data->description ) . '</p>';
-            echo '</div>';
-        }
+                
+                fetch('https://www.weatherwp.com/api/common/publicWeatherForLocation.php?city=<?php echo esc_js( $city ); ?>&country=<?php echo esc_js( $country ); ?>&language=french')
+                    .then(response => response.json())
+                    .then(data => {
+                        temperatureElement.textContent = data.temp;
+                        weatherIconElement.src = data.icon;
+                        weatherDescriptionElement.textContent = data.description;
+                        cityElement.textContent = '<?php echo esc_js( $city ); ?>';
+                    })
+                    .catch(error => {
+                        console.error('Une erreur s\'est produite lors de l\'appel API :', error);
+                    });
+            });
+        </script>
+        <?php
     }
 
     public function form( $instance ) {
